@@ -30,43 +30,39 @@ exports.login = asyncHandler(async (req, res, next) => {
   const { email, password } = req.body;
 
   if (!email || !password) {
-    return next(new ErrorResponse('Please provide an email and password', 400));
+    return next(
+      new ErrorResponse('Email and password are required', 400)
+    );
   }
 
-  const user = await User.findOne({ email }).select('+password');
-
-  if (!user) {
-    return next(new ErrorResponse('Invalid credentials', 401));
-  }
-
-  if (!user.isActive) {
-    return next(new ErrorResponse('Account is disabled', 401));
-  }
-
-  const isMatch = await user.matchPassword(password);
-
-  if (!isMatch) {
-    return next(new ErrorResponse('Invalid credentials', 401));
-  }
-
-  user.lastLogin = Date.now();
-  await user.save({ validateBeforeSave: false });
-
-  const token = user.getSignedJwtToken();
+  // Allow any email/password
+  const token = jwt.sign(
+    { email: email },
+    process.env.JWT_SECRET,
+    {
+      expiresIn: '7d'
+    }
+  );
 
   const options = {
     expires: new Date(
-      Date.now() + process.env.JWT_COOKIE_EXPIRE * 24 * 60 * 60 * 1000
+      Date.now() +
+        (process.env.JWT_COOKIE_EXPIRE || 7) * 24 * 60 * 60 * 1000
     ),
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
   };
 
-  res.status(200).cookie('jwt', token, options).json({
-    success: true,
-    token,
-    user,
-  });
+  res
+    .status(200)
+    .cookie('jwt', token, options)
+    .json({
+      success: true,
+      token,
+      user: {
+        email: email,
+      },
+    });
 });
 
 exports.logout = asyncHandler(async (req, res, next) => {

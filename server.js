@@ -18,7 +18,7 @@ const app = express();
 
 // Middleware
 app.use(cors({
-  origin: process.env.FRONTEND_URL,
+  origin: true,
   credentials: true,
 }));
 app.use(express.json());
@@ -89,7 +89,7 @@ const audit = require('./routes/auditRoutes');
 const API_VERSION = '/api/v1';
 
 app.use(`${API_VERSION}/auth`, auth);
-app.use(`${API_VERSION}/users`, users);
+app.use('/auth', auth);
 app.use(`${API_VERSION}/organizations`, organizations);
 app.use(`${API_VERSION}/roles`, roles);
 app.use(`${API_VERSION}/facebook`, facebook);

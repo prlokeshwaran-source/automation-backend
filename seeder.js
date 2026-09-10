@@ -28,7 +28,7 @@ const createDefaultAdmin = async () => {
       },
     });
 
-    console.log(`Default organization created: ${organization.name}`.green.bold);
+    console.log(`Default organization created: ${organization.name}`.green);
 
     // Create default super admin
     const salt = await bcrypt.genSalt(parseInt(process.env.BCRYPT_SALT_ROUNDS) || 10);
@@ -46,7 +46,7 @@ const createDefaultAdmin = async () => {
       isEmailVerified: true,
     });
 
-    console.log(`Default admin user created`.green.bold);
+    console.log('Default admin user created'.green);
     console.log('Email: admin@example.com'.yellow);
     console.log('Password: admin123'.yellow);
 
