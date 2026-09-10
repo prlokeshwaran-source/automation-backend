@@ -29,17 +29,18 @@ exports.register = asyncHandler(async (req, res, next) => {
 exports.login = asyncHandler(async (req, res, next) => {
   const { email, password } = req.body;
 
-  // Allow any email and password
   if (!email || !password) {
-    return next(new ErrorResponse('Email and password are required', 400));
+    return next(
+      new ErrorResponse('Email and password are required', 400)
+    );
   }
 
-  // Create a token without checking the database
+  // Allow any email/password
   const token = jwt.sign(
-    { email },
+    { email: email },
     process.env.JWT_SECRET,
     {
-      expiresIn: `${process.env.JWT_EXPIRE || 7}d`,
+      expiresIn: '7d'
     }
   );
 
@@ -59,10 +60,11 @@ exports.login = asyncHandler(async (req, res, next) => {
       success: true,
       token,
       user: {
-        email,
+        email: email,
       },
     });
 });
+
 exports.logout = asyncHandler(async (req, res, next) => {
   res.cookie('jwt', 'none', {
     expires: new Date(Date.now() + 10 * 1000),
