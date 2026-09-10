@@ -1,0 +1,29 @@
+services:
+  - type: web
+    name: automation-crm-backend
+    runtime: node
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 5000
+      - key: MONGO_URI
+        value: mongodb://localhost:27017/crm_platform
+      - key: JWT_SECRET
+        value: 7a2b8c3e5f1d4e9a6b7c8d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a
+      - key: JWT_EXPIRE
+        value: 30d
+      - key: JWT_COOKIE_EXPIRE
+        value: 30
+      - key: BCRYPT_SALT_ROUNDS
+        value: 10
+      - key: FRONTEND_URL
+        value: https://automation-project.vercel.app
+      - key: CRM_NAME
+        value: Automation CRM
+      - key: CRM_VERSION
+        value: 1.0.0
+      - key: DATA_ENCRYPTION_KEY
+        value: crm_encryption_key_2024
