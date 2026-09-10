@@ -31,18 +31,31 @@ exports.login = asyncHandler(async (req, res, next) => {
 
   if (!email || !password) {
     return next(
-      new ErrorResponse('Email and password are required', 400)
+      new ErrorResponse('Please provide an email and password', 400)
     );
   }
 
-  // Allow any email/password
-  const token = jwt.sign(
-    { email: email },
-    process.env.JWT_SECRET,
-    {
-      expiresIn: '7d'
-    }
-  );
+  // Find user by email
+  const user = await User.findOne({ email }).select('+password');
+
+  if (!user) {
+    return next(new ErrorResponse('Invalid credentials', 401));
+  }
+
+  // Check if password matches
+  const isMatch = await user.matchPassword(password);
+
+  if (!isMatch) {
+    return next(new ErrorResponse('Invalid credentials', 401));
+  }
+
+  // Check if user is active
+  if (!user.isActive) {
+    return next(new ErrorResponse('Account is deactivated', 401));
+  }
+
+  // Generate JWT token with user ID
+  const token = user.getSignedJwtToken();
 
   const options = {
     expires: new Date(
@@ -60,7 +73,19 @@ exports.login = asyncHandler(async (req, res, next) => {
       success: true,
       token,
       user: {
-        email: email,
+        id: user._id,
+        email: user.email,
+        username: user.username,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        phone: user.phone,
+        role: user.role,
+        isActive: user.isActive,
+        organization: user.organization,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
+        avatar: user.avatar,
+        preferences: user.preferences,
       },
     });
 });
