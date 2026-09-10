@@ -1,7 +1,23 @@
 const asyncHandler = require('../middleware/async');
 const ErrorResponse = require('../utils/errorResponse');
 const Organization = require('../models/Organization');
+const User = require('../models/User');
 const AuditLog = require('../models/AuditLog');
+
+exports.getAvailableAdmins = asyncHandler(async (req, res, next) => {
+  const admins = await User.find({
+    role: { $in: ['super_admin', 'admin', 'organization_admin'] },
+    isActive: true,
+  })
+    .select('firstName lastName email username organization role')
+    .populate('organization', 'name');
+
+  res.status(200).json({
+    success: true,
+    count: admins.length,
+    admins,
+  });
+});
 
 exports.getOrganizations = asyncHandler(async (req, res, next) => {
   res.status(200).json(res.advancedResults);

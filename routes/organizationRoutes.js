@@ -5,6 +5,7 @@ const {
   createOrganization,
   updateOrganization,
   deleteOrganization,
+  getAvailableAdmins,
 } = require('../controllers/organizationController');
 const { protect, authorize } = require('../middleware/auth');
 const advancedResults = require('../middleware/advancedResults');
@@ -22,6 +23,8 @@ router
     getOrganizations
   )
   .post(authorize('super_admin'), createOrganization);
+
+router.route('/available-admins').get(authorize('super_admin'), getAvailableAdmins);
 
 router
   .route('/:id')
