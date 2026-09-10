@@ -13,9 +13,7 @@ const connectDB = require('./config/database');
 // Load env vars
 dotenv.config();
 
-// Connect to database
-connectDB();
-
+// Create app first
 const app = express();
 
 // Middleware
@@ -39,6 +37,39 @@ app.use(limiter);
 if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
 }
+
+// Health check route - before DB connection
+app.get('/health', (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: 'CRM Server is running',
+    version: process.env.CRM_VERSION || '1.0.0',
+    timestamp: new Date().toISOString(),
+  });
+});
+
+// API Info route
+app.get('/api/v1', (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: 'Automation CRM API',
+    version: '1.0.0',
+    endpoints: {
+      auth: '/api/v1/auth',
+      users: '/api/v1/users',
+      organizations: '/api/v1/organizations',
+      roles: '/api/v1/roles',
+      facebook: '/api/v1/facebook',
+      campaigns: '/api/v1/campaigns',
+      leads: '/api/v1/leads',
+      documents: '/api/v1/documents',
+      notifications: '/api/v1/notifications',
+      settings: '/api/v1/settings',
+      analytics: '/api/v1/analytics',
+      audit: '/api/v1/audit',
+    },
+  });
+});
 
 // Routes
 const auth = require('./routes/authRoutes');
@@ -70,23 +101,10 @@ app.use(`${API_VERSION}/settings`, settings);
 app.use(`${API_VERSION}/analytics`, analytics);
 app.use(`${API_VERSION}/audit`, audit);
 
-// Health check route
-app.get('/health', (req, res) => {
-  res.status(200).json({
-    success: true,
-    message: 'CRM Server is running',
-   
-  });
-});
-
-// API Info route
-app.get('/api/v1', (req, res) => {
-  res.status(200).json({
-    success: true,
-    message: 'Automation CRM API',
-    version: '1.0.0',
-   
-  });
+// Connect to database after routes are defined
+// This ensures routes are available even if DB connection fails
+connectDB().catch(err => {
+  console.error(`Database connection error: ${err.message}`.red);
 });
 
 // Error handler middleware
