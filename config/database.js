@@ -20,15 +20,16 @@ const connectDB = async () => {
 
 const seedDefaultData = async () => {
   try {
-    // Check if any organization exists
+    // Check if admin user already exists
+    const existingAdmin = await User.findOne({ email: 'admin@example.com' });
     const orgCount = await Organization.countDocuments();
     const userCount = await User.countDocuments();
 
-    if (orgCount === 0 && userCount === 0) {
-      console.log('Seeding default data...'.yellow.bold);
+    // Create default organization if it doesn't exist
+    let org = await Organization.findOne({ slug: 'default-org' });
 
-      // Create default organization
-      const org = await Organization.create({
+    if (!org && orgCount === 0) {
+      org = await Organization.create({
         name: 'Default Organization',
         slug: 'default-org',
         domain: 'default.org',
@@ -40,14 +41,20 @@ const seedDefaultData = async () => {
           billingCycle: 'monthly',
         },
       });
-
       console.log(`Created default organization: ${org.name}`.green);
+    }
 
-      // Create default super admin
+    // Create or verify default admin
+    if (!existingAdmin) {
+      if (!org) {
+        console.log('No organization available for admin seeding'.yellow);
+        return;
+      }
+
       const salt = await bcrypt.genSalt(parseInt(process.env.BCRYPT_SALT_ROUNDS) || 10);
       const hashedPassword = await bcrypt.hash('admin123', salt);
 
-      const admin = await User.create({
+      await User.create({
         username: 'admin',
         email: 'admin@example.com',
         password: hashedPassword,
@@ -62,11 +69,13 @@ const seedDefaultData = async () => {
       console.log('Created default admin user'.green);
       console.log('Email: admin@example.com'.yellow);
       console.log('Password: admin123'.yellow);
-    } else {
-      console.log('Database already has data, skipping seed'.yellow);
     }
   } catch (error) {
-    console.error(`Seeding error: ${error.message}`.red);
+    if (error.code === 11000) {
+      // Duplicate key error - user already exists, which is fine
+    } else {
+      console.error(`Seeding error: ${error.message}`.red);
+    }
   }
 };
 
