@@ -20,8 +20,8 @@ const connectDB = async () => {
 
 const seedDefaultData = async () => {
   try {
-    // Check if admin user already exists
-    const existingAdmin = await User.findOne({ email: 'admin@example.com' });
+    // Check if admin user already exists (include password for verification)
+    const existingAdmin = await User.findOne({ email: 'admin@example.com' }).select('+password');
     const orgCount = await Organization.countDocuments();
     const userCount = await User.countDocuments();
 
@@ -45,14 +45,14 @@ const seedDefaultData = async () => {
     }
 
     // Create or verify default admin
+    const salt = await bcrypt.genSalt(parseInt(process.env.BCRYPT_SALT_ROUNDS) || 10);
+    const hashedPassword = await bcrypt.hash('admin123', salt);
+
     if (!existingAdmin) {
       if (!org) {
         console.log('No organization available for admin seeding'.yellow);
         return;
       }
-
-      const salt = await bcrypt.genSalt(parseInt(process.env.BCRYPT_SALT_ROUNDS) || 10);
-      const hashedPassword = await bcrypt.hash('admin123', salt);
 
       await User.create({
         username: 'admin',
@@ -69,6 +69,26 @@ const seedDefaultData = async () => {
       console.log('Created default admin user'.green);
       console.log('Email: admin@example.com'.yellow);
       console.log('Password: admin123'.yellow);
+    } else {
+      // Ensure admin is active and has correct password
+      let needsUpdate = false;
+      if (!existingAdmin.isActive) {
+        existingAdmin.isActive = true;
+        needsUpdate = true;
+      }
+      const passwordValid = await bcrypt.compare('admin123', existingAdmin.password);
+      if (!passwordValid) {
+        existingAdmin.password = hashedPassword;
+        needsUpdate = true;
+      }
+      if (existingAdmin.role !== 'super_admin') {
+        existingAdmin.role = 'super_admin';
+        needsUpdate = true;
+      }
+      if (needsUpdate) {
+        await existingAdmin.save();
+        console.log('Updated default admin user credentials'.green);
+      }
     }
   } catch (error) {
     if (error.code === 11000) {
