@@ -1,5 +1,4 @@
 const mongoose = require('mongoose');
-const colors = require('colors');
 const bcrypt = require('bcryptjs');
 const Organization = require('../models/Organization');
 const User = require('../models/User');
@@ -8,13 +7,13 @@ const connectDB = async () => {
   try {
     const conn = await mongoose.connect(process.env.MONGO_URI);
 
-    console.log(`MongoDB Connected: ${conn.connection.host}`.cyan.underline.bold);
-    console.log(`Database: ${conn.connection.name}`.cyan.bold);
+    console.log(`MongoDB Connected: ${conn.connection.host}`);
+    console.log(`Database: ${conn.connection.name}`);
 
-    // Seed default data if no users exist
+    // Seed default data
     await seedDefaultData();
   } catch (error) {
-    console.error(`Error: ${error.message}`.red.underline.bold);
+    console.error(`Error: ${error.message}`);
   }
 };
 
@@ -38,7 +37,7 @@ const seedDefaultData = async () => {
           billingCycle: 'monthly',
         },
       });
-      console.log(`Created default organization: ${org.name}`.green);
+      console.log(`Created default organization: ${org.name}`);
     }
 
     // Create or verify default admin
@@ -46,11 +45,6 @@ const seedDefaultData = async () => {
     const hashedPassword = await bcrypt.hash('admin123', salt);
 
     if (!existingAdmin) {
-      if (!org) {
-        console.log('No organization available for admin seeding'.yellow);
-        return;
-      }
-
       await User.create({
         username: 'admin',
         email: 'admin@example.com',
@@ -58,14 +52,14 @@ const seedDefaultData = async () => {
         firstName: 'John',
         lastName: 'Smith',
         role: 'super_admin',
-        organization: org._id,
+        organization: org ? org._id : undefined,
         isActive: true,
         isEmailVerified: true,
       });
 
-      console.log('Created default admin user'.green);
-      console.log('Email: admin@example.com'.yellow);
-      console.log('Password: admin123'.yellow);
+      console.log('Created default admin user');
+      console.log('Email: admin@example.com');
+      console.log('Password: admin123');
     } else {
       // Ensure admin is active and has correct password
       let needsUpdate = false;
@@ -84,14 +78,15 @@ const seedDefaultData = async () => {
       }
       if (needsUpdate) {
         await existingAdmin.save();
-        console.log('Updated default admin user credentials'.green);
+        console.log('Updated default admin user credentials');
       }
     }
   } catch (error) {
     if (error.code === 11000) {
       // Duplicate key error - user already exists, which is fine
+      console.log('Admin user already exists, skipping creation');
     } else {
-      console.error(`Seeding error: ${error.message}`.red);
+      console.error(`Seeding error: ${error.message}`);
     }
   }
 };
