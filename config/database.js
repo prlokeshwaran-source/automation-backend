@@ -22,13 +22,10 @@ const seedDefaultData = async () => {
   try {
     // Check if admin user already exists (include password for verification)
     const existingAdmin = await User.findOne({ email: 'admin@example.com' }).select('+password');
-    const orgCount = await Organization.countDocuments();
-    const userCount = await User.countDocuments();
 
-    // Create default organization if it doesn't exist
+    // Ensure default organization exists
     let org = await Organization.findOne({ slug: 'default-org' });
-
-    if (!org && orgCount === 0) {
+    if (!org) {
       org = await Organization.create({
         name: 'Default Organization',
         slug: 'default-org',
